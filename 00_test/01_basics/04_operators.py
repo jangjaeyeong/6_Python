@@ -45,3 +45,41 @@ print(f"-5 <= a <= 5 결과: {-5 <= a and a <= 5}")
 print(f"{-5 <= a <= 5}")        # 연쇄 비교 가능!
 
 # TODO: 멤버쉽 연산자...
+
+print("=" * 60)
+print("맴버십 연산자 (in), 식별 연산자(is)")
+print("=" * 60)
+
+members = ["임수진", "김동주", "박이안"]
+print(f"-> {members}")
+print(f"'김동주' 포함 여부 -> {'김동주' in members}")
+
+print(f"'김종혁' 포함하지 않는지? -> {'김종혁' in members}")
+
+print(f"'ll' in 'Hello'")
+
+x = [1,2,3]
+y = [1,2,3]
+z = x
+
+print(f"x : {x} / y : {y} / z : {z}")
+
+print(f"배열 값 비교 : {x == y}")
+print(f"객체 주소 비교 : {x is y}")
+print(f"x is z : {x is z}")
+
+
+data = None
+print(f"data is none? {data is None}")
+print(f"data is not none? {data is not None}")
+
+
+print("=" * 60)
+print("복합 대입 연산자")
+print("=" * 60)
+
+x = 10
+print(f"x : {x}")
+
+x+=5
+print(f"x+=5 : {x}")
