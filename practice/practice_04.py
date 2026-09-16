@@ -107,6 +107,40 @@ print("-"*60)
        - 각 종목에서 자기 평균을 뺀 배열 : (종목 수, 날짜 수) 배열 
          결과의 종목별 평균은 0 이 되어야 한다.
 """
+close = load_matrix()
 
-matrix = load_matrix()
-print(matrix)
+stock_mean = np.nanmean(close, axis=1)
+
+date_mean = np.nanmean(close, axis=0)
+
+centered = close - stock_mean[:, np.newaxis]
+
+
+print("종목별 평균가:", stock_mean)
+print("종목별 평균가 크기:", stock_mean.shape)
+
+print("날짜별 평균가:", date_mean)
+print("날짜별 평균가 크기:", date_mean.shape)
+
+print("평균을 뺀 배열 크기:", centered.shape)
+
+
+stock_mean = np.nanmean(close, axis=1)
+
+date_mean = np.nanmean(close, axis=0)
+
+centered = close - stock_mean[:, np.newaxis]
+
+
+print("종목별 평균가:", stock_mean)
+print("종목별 평균가 크기:", stock_mean.shape)
+
+print("날짜별 평균가:", date_mean)
+print("날짜별 평균가 크기:", date_mean.shape)
+
+print("평균을 뺀 배열 크기:", centered.shape)
+
+result = np.nanmean(centered, axis=1)
+result[np.isclose(result, 0)] = 0
+
+print("각 종목의 평균:", result)

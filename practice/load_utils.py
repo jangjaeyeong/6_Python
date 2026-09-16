@@ -1,13 +1,14 @@
 """
     실습 데이터 불러오는 기능을 담은 모듈
 """
+
 import numpy as np
 from pathlib import Path
 
 CSV_PATH = Path(__file__).with_name("prices.csv")
-# 현재 파일의 경로를 가져온 후, 이름만 제시한 값으로 변경
-# print(CSV_PATH)
+
 N_DAYS = 750   # 거래일수
+
 
 _COLUMNS = {
     "code": 0,
@@ -21,8 +22,10 @@ _COLUMNS = {
     "changeRate": 8
 }
 
+
 # 한 번 읽은 열(데이터)을 저장하는 용도
 _cache = {}
+
 
 def _read(col, dtype):
     """
@@ -37,13 +40,14 @@ def _read(col, dtype):
         _cache[key] = np.loadtxt(
             CSV_PATH,
             dtype=dtype,
-            delimiter=",",          # 구분자
-            usecols=_COLUMNS[col],  # 필요한 열 하나만 읽음
-            skiprows=1,             # 첫 줄을 생략(건너뜀)
+            delimiter=",",
+            usecols=_COLUMNS[col],
+            skiprows=1,
             encoding="utf-8-sig"
         )
 
-    return _cache[key].copy()       # 원본이 아닌 복사본을 반환
+    return _cache[key].copy()
+
 
 def load_close_flat():
     """
@@ -51,47 +55,68 @@ def load_close_flat():
     """
     return _read("close", "int64")
 
-def load_one_stock(idx = 0):
+
+def load_one_stock(idx=0):
     """
         한 종목의 종가만 1차원 배열로 리턴
-
-        종목 하나 당 750개(줄), 그 다음 종목... 750줄~
     """
     close_arr = load_close_flat()
+
     start = idx * N_DAYS
     end = start + N_DAYS
+
     return close_arr[start:end]
+
 
 def load_dates():
     """
         거래일 정보를 날짜형식으로 리턴 (1차원 배열)
-
-        .astype("datetime64[D]") => 문자열을 날짜로 변경
-        [D] => Day 단위로 다루겠다!
     """
-
     dates = _read("date", str)
     return dates[:N_DAYS].astype("datetime64[D]")
+
 
 def load_codes():
     """
         종목 코드 배열 리턴
     """
     codes = _read("code", str)
-    return codes[::N_DAYS]
+
+    # 중복을 제거하면서 등장 순서 유지
+    return np.unique(codes)
+
 
 def load_matrix():
     """
         종가 행렬을 반환
-        행: 종목 (120) / 열: 날짜 (750)  ---> (120, 750)
+        행: 종목 / 열: 날짜
+
+        현재 CSV에서 각 종목의 데이터를 확인하여
+        (종목 수, 750) 형태의 행렬을 만든다.
     """
-    close = load_close_flat()        # 1차원 배열
-    return close.reshape(120, 750)   # 2차원 배열
+
+    codes = load_codes()
+    close = load_close_flat()
+
+    matrix = np.full((len(codes), N_DAYS), np.nan)
+
+    for i, code in enumerate(codes):
+        code_arr = _read("code", str)
+
+        stock_close = close[code_arr == code]
+
+        days = min(len(stock_close), N_DAYS)
+
+        matrix[i, :days] = stock_close[:days]
+
+    return matrix
+
 
 def load_column(name):
     """
-        열 데이터를 행렬(120, 750)로 반환
+        열 데이터를 행렬로 반환
     """
+
     if name in ("code", "date"):
         raise KeyError("기존 함수를 사용하세요.")
 
@@ -100,11 +125,37 @@ def load_column(name):
 
     dtype = "float64" if name == "changeRate" else "int64"
 
-    return _read(name, dtype).reshape(120, 750)
+    data = _read(name, dtype)
 
-_NAN_IDX = np.array([37, 88, 142, 199, 242, 301, 358, 412, 470, 537, 618, 703])
-_OUTLIER_IDX = np.array([33, 61, 215, 488, 724])
-_OUTLIER_SCALE = np.array([6.2, 5.4, 7.8, 5.9, 7.1])
+    codes = load_codes()
+
+    matrix = np.full((len(codes), N_DAYS), np.nan)
+
+    code_arr = _read("code", str)
+
+    for i, code in enumerate(codes):
+        stock_data = data[code_arr == code]
+
+        days = min(len(stock_data), N_DAYS)
+
+        matrix[i, :days] = stock_data[:days]
+
+    return matrix
+
+
+_NAN_IDX = np.array([
+    37, 88, 142, 199, 242, 301,
+    358, 412, 470, 537, 618, 703
+])
+
+_OUTLIER_IDX = np.array([
+    33, 61, 215, 488, 724
+])
+
+_OUTLIER_SCALE = np.array([
+    6.2, 5.4, 7.8, 5.9, 7.1
+])
+
 
 def load_dirty():
     """
@@ -114,7 +165,11 @@ def load_dirty():
     """
 
     arr = load_one_stock(0).astype("float64")
+
     arr[_NAN_IDX] = np.nan
-    arr[_OUTLIER_IDX] = arr[_OUTLIER_IDX] * _OUTLIER_SCALE
+
+    arr[_OUTLIER_IDX] = (
+        arr[_OUTLIER_IDX] * _OUTLIER_SCALE
+    )
 
     return arr, np.sort(_NAN_IDX), np.sort(_OUTLIER_IDX)
